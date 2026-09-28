@@ -20,7 +20,8 @@ LEARNING_RATE = float(sys.argv[6])
 DEVICE = sys.argv[7]
 EPOCHS = int(sys.argv[8])
 
-"""for example:
+"""
+for example:
 python train.py \
     /scratch/users/john/hungarian_token_ids.txt \
     /scratch/users/john/vocab.json \
@@ -29,7 +30,9 @@ python train.py \
     32 \
     0.0003 \
     cuda:0 \
-    3"""
+    3
+
+"""
 
 
 
