@@ -23,8 +23,8 @@ TARGET = 1_000_000
 
 # CHECK THIS: FineWeb-2 may not contain English. If load_dataset fails, use
 # DATASET = "HuggingFaceFW/fineweb", CONFIG = "sample-10BT"
-DATASET = "HuggingFaceFW/fineweb-2"
-CONFIG = "eng_Latn"
+DATASET = "HuggingFaceFW/fineweb"
+CONFIG = "sample-10BT"
 
 WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)   # letter-only words, punctuation and digits dropped
 ENGLISH_WORD_RE = re.compile(r"^[a-zA-Z]+$")     # only plain English letters
