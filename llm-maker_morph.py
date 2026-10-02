@@ -70,7 +70,7 @@ class TextDataset(Dataset):
 
     def __getitem__(self, idx):
         start = idx * self.block_size
-        chunk = self.input_ids[start:start + self.block_size]
+        chunk = self.input_ids[start:start + self.block_size].long()
 
         return chunk, chunk.clone()
 
