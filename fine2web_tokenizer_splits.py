@@ -44,9 +44,5 @@ with open(OUTPUT, "w", encoding="utf-8") as f:
 
         total += count
 
-        if total % 1_000_000 == 0:
-            print(f"{total:,} words", flush=True)
 
-#get location and amount of words as confirmation
-print(f" {total:,} words")
-print(f"Output file: {OUTPUT}")
+

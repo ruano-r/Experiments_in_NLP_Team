@@ -6,34 +6,37 @@ INPUT_FILE = sys.argv[1]
 OUTPUT_FILE = sys.argv[2]
 
 
+    
+
+
 def extract_pieces(analysis):
     """
-    Extract possible morphs from words, removing the additional tags from EmMorph's structure
-
-    Example:
-        portás[/N]verseny[/N][Nom]
-    -> ["portás", "verseny"]
-    """
+        Extract possible morphs from words, removing the additional tags from EmMorph's structure
+    
+        Example:
+            portás[/N]verseny[/N][Nom]
+        -> ["portás", "verseny"]
+        """
     #list for morphs, and string where the current morph is being built
     pieces = []
     current = ""
-
-    #when an parenthesis is reached that morph is complete and can be added to the list 
     i = 0
     while i < len(analysis):
-
         if analysis[i] == "[":
             if current:
                 pieces.append(current)
                 current = ""
-
+            #when an parenthesis is reached that morph is complete and can be added to the list 
             end = analysis.find("]", i)
-           
             if end == -1:
                 break
 
-            i = end + 1
+            tag = analysis[i + 1:end]
+            # drop the piece that this punctuation tag belongs to
+            if tag.startswith("Punct") and pieces:
+                pieces.pop()
 
+            i = end + 1
         else:
             current += analysis[i]
             i += 1
@@ -41,7 +44,7 @@ def extract_pieces(analysis):
     if current:
         pieces.append(current)
 
-    return [piece for piece in pieces if piece]
+    return [p.lower() for p in pieces if p]
 
 
 def segmentation(analysis):
@@ -73,7 +76,8 @@ with open(INPUT_FILE, "r", encoding="utf-8") as infile:
         if len(parts) < 2:
             continue
 
-        word = parts[0]
+        #also lowercasing
+        word = parts[0].lower()
         analysis = parts[1]
 
         #ignore unknown words
