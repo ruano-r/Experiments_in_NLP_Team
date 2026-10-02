@@ -235,7 +235,7 @@ if __name__ == "__main__":
         sys.argv[1],
         sys.argv[2],
         sys.argv[3],
-        int(sys.argv[4]),
+        float(sys.argv[4]),
         int(sys.argv[5]) if len(sys.argv) > 4 else 20_000,
     )
 
