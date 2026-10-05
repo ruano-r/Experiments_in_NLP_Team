@@ -10,9 +10,9 @@ from torch.optim import AdamW
 
 
 # hyperparameters to select from outside the file, file related, and model related
-TOKENIZER = "morph_aware_tok_strict"
-RAW_CORPUS = "fineweb2_finnish_raw_100m"
-SAVE_DIR = "ouput_llm-maker"
+TOKENIZER = sys.argv[2]
+RAW_CORPUS = sys.argv[3]
+SAVE_DIR = sys.argv[4]
 DEVICE = sys.argv[1]
 BLOCK_SIZE = 64
 BATCH_SIZE = 4
