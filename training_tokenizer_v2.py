@@ -6,6 +6,7 @@
 
 import sys
 import json
+import string
 from collections import Counter, defaultdict
 
 #   ----- Structuring data -----------------------
@@ -184,6 +185,8 @@ def build_vocab_from_merges(merges, chars, specials=('<unk>', '<pad>', '<bos>', 
     """    
 
     symbols = set(chars) # all characters 
+    punctuation = [p for p in string.punctuation]
+    digits = [d for d in string.digits]
 
     merges = list(dict.fromkeys(merges)) #remove duplicate merges from list
     
@@ -191,7 +194,7 @@ def build_vocab_from_merges(merges, chars, specials=('<unk>', '<pad>', '<bos>', 
         symbols.add(a)
         symbols.add(b)
         symbols.add(a + b)
-    index_to_string = list(specials) + sorted(symbols) # just a list, but the index of each item is their id
+    index_to_string = list(specials) + punctuation + digits + sorted(symbols) # just a list, but the index of each item is their id
     string_to_index = {tok: i for i, tok in enumerate(index_to_string)}
 
     return string_to_index, index_to_string
