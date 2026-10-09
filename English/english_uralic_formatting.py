@@ -106,73 +106,93 @@ def segment_sample(sample, analyser):
 
 # ----- UralicNLP (English) ---------------------------------
 
+
+
+
 def parse_analysis(analysis):
-    """splits the morphological analysis token structure 
-    'UN+happy[ADJ]+NESS[ADJ/N]+N' -> ['un', 'happy', 'ness']"""
-    
+    """Extract lexical morphemes, excluding grammatical tags."""
     morphs = []
     root_seen = False
+
+
     for tok in analysis.split("+"):
         name = tok.split("[")[0]
+
         if not name:
             continue
+
         if not root_seen:
-            # prefix or root
-            morphs.append(name.lower())          
+            morphs.append(name.lower())
             if name[0].islower():
                 root_seen = True
-        # derivational suffix
         elif "[" in tok:
-            morphs.append(name.lower())          
-        #  inflection/POS tag will be ignore
+            morphs.append(name.lower())
+
     return morphs
 
 
-
-
-
 def align(word, morphs):
-    """making the segments into lists"""
-    if not word.startswith(morphs[0]):
+    """Align extracted morphemes to the word's surface form."""
+    if not morphs or not word.startswith(morphs[0]):
         return None
-    pieces, pos = [], 0
+
+
+    pieces = []
+    pos = 0
+
     for m in morphs[1:]:
         cut = word.find(m, pos + 1)
+
         if cut == -1:
-            return None                     
-        # morph is respelled (happy/happi, go/went)
+            return None
+
         pieces.append(word[pos:cut])
         pos = cut
-    chunk, last = word[pos:], morphs[-1]
-    # leftover letters = inflection (cat|s, walk|ed)
-    if len(chunk) > len(last):                
-        pieces += [last, chunk[len(last):]]
+
+    chunk = word[pos:]
+    last = morphs[-1]
+
+    if len(chunk) > len(last) and chunk.startswith(last):
+        pieces.extend([last, chunk[len(last):]])
     else:
         pieces.append(chunk)
+
     return pieces
 
 
 def segment_uralicnlp(word):
-    """choosing the analysis that keeps the surface form, and is the most fine grained"""
+    """Choose the finest segmentation that preserves the surface word."""
     word = word.lower()
     analyses = uralicApi.analyze(word, "eng")
+
+
     if not analyses:
-        return None                           
-    # unknown word skip
+        return None
 
     options = []
-    for a, _ in analyses:
-        morphs = parse_analysis(a)
+
+    for analysis, _ in analyses:
+        morphs = parse_analysis(analysis)
+
         if morphs:
             pieces = align(word, morphs)
+
             if pieces and "".join(pieces) == word:
                 options.append(pieces)
 
-    if not options:
-        return [word]                         
-    # if no surface-faithful option, keep the whole word
-    # finest grained among the faithful ones
-    return max(options, key=len) 
+    # Fallback for regular inflections when tags indicate the feature.
+    for analysis, _ in analyses:
+        if analysis.endswith("+PL") and word.endswith("s") and len(word) > 1:
+            options.append([word[:-1], "s"])
+
+        if analysis.endswith("+PAST") and word.endswith("ed") and len(word) > 2:
+            options.append([word[:-2], "ed"])
+
+        if analysis.endswith("+3sg+PRES") and word.endswith("s") and len(word) > 1:
+            options.append([word[:-1], "s"])
+
+    return max(options, key=len) if options else [word]
+
 
 
 
