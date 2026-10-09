@@ -1,315 +1,117 @@
-import sys
-import json
+# python evals_tokenizer.py TOKENIZER_DIR TEXT_FILE [MAX_LINES] [--name RUN_NAME]
+# TEXT_FILE: preprocessed plain text,stats are for the whole file
+# TOKENIZER_DIR = output of wrap_into_HFtok.py 
+import os, json, argparse
 from collections import Counter
-from datasets import load_dataset
+from transformers import AutoTokenizer
 
-#to import the tokenizer code
-from tokenize_data import (
-    load_merges,
-    pretokenize,
-    bpe_encode_word,
-)
-
-#open json
-def load_vocab(path):
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+BATCH = 1000
 
 
+def evaluate_dataset(dataset, tokenizer, max_lines=None):
+    unk_id = tokenizer.unk_token_id
+    vocab_size = len(tokenizer)
+    bt = tokenizer.backend_tokenizer
 
-def evaluate_dataset(
-    dataset,
-    merge_ranks,
-    vocab,
-    max_documents=None,
-):
-    """
-    Evaluate our BPE tokenizers on a hggingface dataset on the following metrics
+    n_docs = n_words = n_chars = n_tokens = n_unk_tokens = n_unk_words = 0
+    token_counts = Counter()
 
-        - fertility (tokens per word)
-        - compression (characters per token)
-        - <unk> rate (rate of unknown tokens)
-        - vocabulary coverage (how much vocab is generalized enough to also be on our test) -- for types and for tokens too
-    """
+    def process(texts):
+        nonlocal n_words, n_chars, n_tokens, n_unk_tokens, n_unk_words
+        # add_special_tokens=False to not have the special tokens inflate every count
+        encs = bt.encode_batch(texts, add_special_tokens=False)
+        for text, enc in zip(texts, encs):
+            ids = enc.ids
+            words = text.split()           
+            # whitespace words for comparing better across tokenizers
+            n_words += len(words)
+            n_chars += sum(len(w) for w in words)
+            n_tokens += len(ids)
+            token_counts.update(ids)
+            n_unk_tokens += sum(1 for i in ids if i == unk_id)
+            # unk words count uses the id 
+            n_unk_words += len({w for i, w in zip(ids, enc.word_ids) if i == unk_id})
 
-    #1 getting the counts
-    #2 calculating the metrics
-    
-    #1.
-
-    #caching like in the tokenizer
-    cache = {}
-
-    #counts
-    num_documents = 0
-    num_words = 0
-    num_chars = 0
-    num_tokens = 0
-
-    num_unk_tokens = 0
-    num_unk_words = 0
-
-    #tokens and types
-    observed_token_types = set()
-    observed_token_counts = Counter()
-
-    for example in dataset:
-        text = example["text"]
-
+    buf = []
+    for ex in dataset:
+        text = ex["text"]
         if not text:
             continue
-
-        num_documents += 1
-
-        if max_documents is not None and num_documents > max_documents:
+        n_docs += 1
+        if max_lines is not None and n_docs > max_lines:
+            n_docs -= 1
             break
+        buf.append(text)
+        if len(buf) == BATCH:
+            process(buf); buf = []
+            print(f"{n_docs:,} docs | {n_words:,} words | {n_tokens:,} tokens", flush=True)
+    if buf:
+        process(buf)
 
-        #using existing preprocessing
-        words = pretokenize(text)
-
-        for word in words:
-            if not word:
-                continue
-            
-            #count words and characters
-            num_words += 1
-            num_chars += len(word)
-
-            #using existing bpe implementation
-            tokens = bpe_encode_word(
-                word,
-                merge_ranks,
-                cache,
-            )
-            #count tokens 
-            num_tokens += len(tokens)
-            #not an unknown
-            word_has_unk = False
-
-            for token in tokens:
-                #adding the types and counting them
-                observed_token_types.add(token)
-                observed_token_counts[token] += 1
-                
-                if token not in vocab:
-                    num_unk_tokens += 1
-                    word_has_unk = True
-
-            if word_has_unk:
-                num_unk_words += 1
-
-        if num_documents % 1000 == 0:
-            print(
-                f"{num_documents:,} documents | "
-                f"{num_words:,} words | "
-                f"{num_tokens:,} tokens"
-            )
-
-
-
-
-
-    # 2. 
-
-    # Fertility
-    fertility = num_tokens / num_words
-
-    # Compression 
-    compression = num_chars / num_tokens
-
-    # UNK token rate
-    unk_token_rate = num_unk_tokens / num_tokens
-
-    # UNK word rate
-    unk_word_rate = num_unk_words / num_words
-
-    # Vocabulary coverage
- 
-    # for types
-    covered_types = sum(
-        1 for token in observed_token_types
-        if token in vocab
-    )
-
-    type_coverage = (
-        covered_types / len(observed_token_types)
-        if observed_token_types
-        else 0.0
-    )
-
-    # for tokens, based on occurences
-    covered_token_occurrences = sum(
-        count
-        for token, count in observed_token_counts.items()
-        if token in vocab
-    )
-
-    token_coverage = covered_token_occurrences / num_tokens
-
+    # simple calculated metric 
+    vocab = tokenizer.get_vocab()   
+    id_to_tok = {i: t for t, i in vocab.items()}
+    covered_types = sum(1 for i in token_counts if id_to_tok.get(i) in vocab)
+    covered_occ = sum(c for i, c in token_counts.items() if id_to_tok.get(i) in vocab)
     return {
-        "documents": num_documents,
-        "words": num_words,
-        "characters": num_chars,
-        "tokens": num_tokens,
-
-        "fertility_tokens_per_word": fertility,
-
-        "compression_characters_per_token": compression,
-
-        "unk_token_rate": unk_token_rate,
-        "unk_word_rate": unk_word_rate,
-
-        "vocabulary_size": len(vocab),
-
-        "observed_token_types": len(observed_token_types),
-
-        "vocabulary_type_coverage": type_coverage,
-        "vocabulary_token_coverage": token_coverage,
+        "lines": n_docs,
+        "words": n_words,
+        "characters": n_chars,
+        "tokens": n_tokens,
+        "fertility_tokens_per_word": n_tokens / n_words,
+        "compression_characters_per_token": n_chars / n_tokens,
+        "unk_token_rate": n_unk_tokens / n_tokens,
+        "unk_word_rate": n_unk_words / n_words,
+        "vocabulary_size": vocab_size,
+        "observed_token_types": len(token_counts),
+        "vocabulary_type_coverage": covered_types / len(token_counts) if token_counts else 0.0,
+        "vocabulary_token_coverage": covered_occ / n_tokens,
     }
 
 
-#printing the results to be easier to read
-
-def print_results(results):
-
-    print()
-    print("=" * 60)
-    print("TOKENIZER EVALUATION")
-    print("=" * 60)
-
-    print(f"Documents:              {results['documents']:,}")
-    print(f"Words:                  {results['words']:,}")
-    print(f"Characters:             {results['characters']:,}")
-    print(f"Tokens:                 {results['tokens']:,}")
-    print()
-
-    print(
-        f"Fertility:              "
-        f"{results['fertility_tokens_per_word']:.4f} tokens/word"
-    )
-
-    print(
-        f"Compression:            "
-        f"{results['compression_characters_per_token']:.4f} chars/token"
-    )
-
-    print()
-
-    print(
-        f"<unk> token rate:       "
-        f"{results['unk_token_rate'] * 100:.4f}%"
-    )
-
-    print(
-        f"<unk> word rate:        "
-        f"{results['unk_word_rate'] * 100:.4f}%"
-    )
-
-    print()
-
-    print(
-        f"Vocabulary size:        "
-        f"{results['vocabulary_size']:,}"
-    )
-
-    print(
-        f"Observed token types:   "
-        f"{results['observed_token_types']:,}"
-    )
-
-    print(
-        f"Vocabulary type coverage:"
-        f" {results['vocabulary_type_coverage'] * 100:.4f}%"
-    )
-
-    print(
-        f"Vocabulary token coverage:"
-        f" {results['vocabulary_token_coverage'] * 100:.4f}%"
-    )
-
+def print_results(r):
+    print("\n" + "=" * 60 + "\nTOKENIZER EVALUATION\n" + "=" * 60)
+    print(f"Lines: {r['lines']:,} | Words: {r['words']:,} | "
+          f"Chars: {r['characters']:,} | Tokens: {r['tokens']:,}")
+    print(f"Fertility:   {r['fertility_tokens_per_word']:.4f} tokens/word")
+    print(f"Compression: {r['compression_characters_per_token']:.4f} chars/token")
+    print(f"<unk> token rate: {r['unk_token_rate']*100:.4f}%")
+    print(f"<unk> word rate:  {r['unk_word_rate']*100:.4f}%")
+    print(f"Vocabulary size: {r['vocabulary_size']:,}")
+    print(f"Observed token types: {r['observed_token_types']:,}")
+    print(f"Vocabulary type coverage:  {r['vocabulary_type_coverage']*100:.4f}%")
+    print(f"Vocabulary token coverage: {r['vocabulary_token_coverage']*100:.4f}%")
     print("=" * 60)
 
 
+def read_lines(path):
+    """ stats are aggregated over the whole file."""
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                yield {"text": line}
 
-
-
-#you can define the things you want from the terminal, in the order preovided in the print statement
 
 def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("tokenizer_dir")
+    p.add_argument("text_file")
+    p.add_argument("max_lines", nargs="?", type=int, default=None)
+    p.add_argument("--name", default=None, help="used in the output filename")
+    a = p.parse_args()
 
-    if len(sys.argv) < 5:
-        print(
-            "Usage:\n"
-            "python evaluate_tokenizer.py "
-            "<merges> <vocab> <language>(specify as stated in finewb) <split>(test or dev) "
-            "[max_documents]"
-        )
-        sys.exit(1)
+    tokenizer = AutoTokenizer.from_pretrained(a.tokenizer_dir)
+    print(f"Loaded tokenizer, vocab size {len(tokenizer):,}")
 
-    merges_path = sys.argv[1]
-    vocab_path = sys.argv[2]
-    language = sys.argv[3]
-    split = sys.argv[4]
-
-    max_documents = None
-
-    if len(sys.argv) >= 6:
-        max_documents = int(sys.argv[5])
-
-  
-    #loading the tokenizer
-    merges = load_merges(merges_path)
-
-    merge_ranks = {
-        pair: rank
-        for rank, pair in enumerate(merges)
-    }
-
-    print(f"Loaded {len(merges):,} merges.")
-
-    vocab = load_vocab(vocab_path)
-    print(f"Loaded vocabulary with {len(vocab):,} entries.")
-
-
-
-    # loading fineweb
-
-    print("Loading FineWeb-2...")
-
-    dataset = load_dataset(
-        "HuggingFaceFW/fineweb-2",
-        language,
-        split=split,
-        streaming=True,
-    )
-
-    
-    
-    # getting the straightforward stats 
-    
-    results = evaluate_dataset(
-        dataset,
-        merge_ranks,
-        vocab,
-        max_documents=max_documents,
-    )
-
+    results = evaluate_dataset(read_lines(a.text_file), tokenizer, a.max_lines)
     print_results(results)
 
-    # saving the results
-    output_path = (
-        f"tokenizer_eval_{language}_{split}.json"
-    )
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(
-            results,
-            f,
-            indent=2,
-            ensure_ascii=False,
-        )
-
-    print(f"\nSaved results to: {output_path}")
+    name = a.name or os.path.splitext(os.path.basename(a.text_file))[0]
+    out = f"tokenizer_eval_{name}.json"
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    print(f"Saved results to: {out}")
 
 
 if __name__ == "__main__":
