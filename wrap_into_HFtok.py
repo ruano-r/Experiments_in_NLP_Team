@@ -1,5 +1,5 @@
 # python wrap_into_HFtok.py VOCAB_JSON MERGES_TXT OUTPUT_DIR [--marker]
-# --marker: only for tokenizers trained with a '_' word-start marker (v3). Not for v2.
+# --marker: only for tokenizers trained with a '_' word-start marker 
 import sys
 from tokenizers import Tokenizer, models, pre_tokenizers, normalizers, processors
 from transformers import PreTrainedTokenizerFast
