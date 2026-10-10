@@ -37,13 +37,31 @@ EMAIL_RE = re.compile(r"[\w\.\-+%]+@[\w\-]+(?:\.[\w\-]+)+") # remove emails
 # remove https, www etc
 URL_RE = re.compile(r"(?:https?://|ftp://|www\.)\S+") 
 
-########## EDIT alphabet ACCORDING TO LANGUAGE!
+########## COMMENT OUT THE REGEX OF THE LANGUAGE YO UDO NOT NEED
 
 #anything not in this set is removed (emojis, other alphabets)
-#i'm keeping alphabet, spanish accents, digits, whitespace, punct
-NOTALLOW_RE = re.compile(
-    r"[^a-z0-9áéíóúüñ\s"
-    r"\.,;:!?¿¡\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€«»“”‘’°ºª|~^`]")
+# #i'm keeping alphabet, spanish accents, digits, whitespace, punct
+# NOTALLOW_RE = re.compile(
+#     r"[^a-z0-9áéíóúüñ\s"
+#     r"\.,;:!?¿¡\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€«»“”‘’°ºª|~^`]")
+
+# English
+NOTALLOW_EN = re.compile(
+    r"[^a-z0-9\s"
+    r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€£“”‘’°|~^`]")
+
+# # Hungarian
+# NOTALLOW_HU = re.compile(
+#     r"[^a-z0-9áéíóöőúüű\s"
+#     r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€„”“»«’°|~^`]")
+
+# # Finnish
+# NOTALLOW_FI = re.compile(
+#     r"[^a-z0-9åäöšž\s"
+#     r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€”“»’°|~^`]")
+
+
+
 
 SPACES_RE = re.compile(r"[ \t\u00a0]+")
 # i will want to have sentences per line
@@ -72,6 +90,8 @@ def clean_text(text: str) -> str:
     lines = [ln.strip() for ln in text.split("\n")]
     return "\n".join(ln for ln in lines if ln)  # drop empty lines
 
+
+#option for original fineweb (for english)
 # ---- stream dataset
 ds = load_dataset(
     "HuggingFaceFW/fineweb-2",
@@ -79,6 +99,14 @@ ds = load_dataset(
     split=DATASET_SPLIT,
     streaming=True,
 )
+
+# ds = load_dataset(
+#     "HuggingFaceFW/fineweb",
+#     name="sample-10BT",  
+#     split="train",
+#     streaming=True,
+# )
+
 
 # ---- skipping if needed
 skip_target = SKIP_WORDS + (SKIP_MARGIN if SKIP_WORDS else 0)

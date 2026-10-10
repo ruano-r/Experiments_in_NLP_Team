@@ -6,4 +6,7 @@ The data we use to train the tokenizers and the models in each language is from 
 
 
 
+The pipeline for training/evaluating a tokenizer and model with our code is found below:
+
+-
 
