@@ -37,9 +37,12 @@ run a morphogical analyser on the 1M train split in the language of choice.
     - evals_tokenizer.py - pass the 1M test split file, preprocessed, and the tokenizer
     - complex_tokenizer_evals.py - pass the 1M TRAIN data segmented with @@ as boundaries, and the tokenizer
 
-7- train the llm with llm-maker_morph.py (provides some eval statistics)
+7- train the llm with llm-maker_morph.py
 
-8- evaluate the llm further with FinetunePOS_eval.py
+8- evaluate model on dev/test with evals_model.py to get loss on dev/test + our main metrics like perplexity (not comparable across tokenisers) and bits-per-byte (comparable across tokenizers) + other (including next token accuracy)
+
+
+9- evaluate the llm further with FinetunePOS_eval.py
 
 
 
