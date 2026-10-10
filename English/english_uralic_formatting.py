@@ -1,12 +1,9 @@
 ##changing lianne's script in order to fit the english morph analyser's structure
 
-# SEGMENTING ENGLISH DATA FOR TRAINING THE MORPHO-AWARE TOKENIZER
-#
-# Usage:
-#   python segment_english.py uralicnlp OUTPUT_FILE
-#
-# Takes ~1M words from FineWeb, segments each word with uralicNLP's English
-# analyser and writes one lowercased, @@-joined segmentation per line.
+# segmenting data for training the english morphological analyser.
+
+#chooses most finegrained option from the ones that are non canonical. translates the labels
+# for plurals and verb endings into the respective morpheme
 
 import re
 import sys
