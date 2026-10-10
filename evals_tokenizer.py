@@ -1,6 +1,5 @@
-# python evals_tokenizer.py TOKENIZER_DIR TEXT_FILE [MAX_LINES] [--name RUN_NAME]
-# TEXT_FILE: preprocessed plain text,stats are for the whole file
-# TOKENIZER_DIR = output of wrap_into_HFtok.py 
+# preprocessed .txt file from the test split of fineweb that we can get from giulias code stats are for the whole file
+# tokenizer_dir its the output of wrap_into_HFtok.py 
 import os, json, argparse
 from collections import Counter
 from transformers import AutoTokenizer
@@ -70,7 +69,6 @@ def evaluate_dataset(dataset, tokenizer, max_lines=None):
 
 
 def print_results(r):
-    print("\n" + "=" * 60 + "\nTOKENIZER EVALUATION\n" + "=" * 60)
     print(f"Lines: {r['lines']:,} | Words: {r['words']:,} | "
           f"Chars: {r['characters']:,} | Tokens: {r['tokens']:,}")
     print(f"Fertility:   {r['fertility_tokens_per_word']:.4f} tokens/word")
@@ -81,7 +79,7 @@ def print_results(r):
     print(f"Observed token types: {r['observed_token_types']:,}")
     print(f"Vocabulary type coverage:  {r['vocabulary_type_coverage']*100:.4f}%")
     print(f"Vocabulary token coverage: {r['vocabulary_token_coverage']*100:.4f}%")
-    print("=" * 60)
+
 
 
 def read_lines(path):
