@@ -9,7 +9,7 @@ The data we use to train the tokenizers and the models in each language is from 
 The pipeline for training/evaluating a tokenizer and model with our code is found below:
 
 1- get data splits
-use fineweb2_splits2.py to get the data splits:
+use fineweb2_splits2.py to get the data splits, comments provide the REGEX for different languages:
     - 1M from train split for morphologically analysing and evaluating the tokenizer 
     - 100M from train split for training a small model
     - 1M from test split for other tests of the tokenizer
