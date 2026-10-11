@@ -33,7 +33,7 @@ def create_word_objects(lines):
     for token, freq in word_freq.items():
         morphs = token.split('@@')                  #['walk', 'ed']
         morphemes = [list(m) for m in morphs]       #[['w', 'a', 'l', 'k'],['e', 'd']]
-        morphemes[0].insert(0, '_')                 # '_' as marker for the beginning of a word: [['_','w', 'a', 'l', 'k'],['e', 'd']]
+        #morphemes[0].insert(0, '_')                 # '_' as marker for the beginning of a word: [['_','w', 'a', 'l', 'k'],['e', 'd']]
         vocab.append(Word(morphemes, freq)) 
 
     return vocab
