@@ -104,8 +104,6 @@ def segment_sample(sample, analyser):
 # ----- UralicNLP (English) ---------------------------------
 
 
-
-
 def parse_analysis(analysis):
     """Extract lexical morphemes, excluding grammatical tags."""
     morphs = []

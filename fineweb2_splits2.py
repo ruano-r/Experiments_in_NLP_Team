@@ -10,6 +10,7 @@
 
 
 # ---- imports
+import os
 import re
 import unicodedata
 from datasets import load_dataset
@@ -45,18 +46,18 @@ URL_RE = re.compile(r"(?:https?://|ftp://|www\.)\S+")
 #     r"[^a-z0-9áéíóúüñ\s"
 #     r"\.,;:!?¿¡\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€«»“”‘’°ºª|~^`]")
 
-# English
-NOTALLOW_EN = re.compile(
-    r"[^a-z0-9\s"
-    r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€£“”‘’°|~^`]")
+# # English
+# NOTALLOW_RE = re.compile(
+#     r"[^a-z0-9\s"
+#     r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€£“”‘’°|~^`]")
 
-# # Hungarian
-# NOTALLOW_HU = re.compile(
-#     r"[^a-z0-9áéíóöőúüű\s"
-#     r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€„”“»«’°|~^`]")
+# Hungarian
+NOTALLOW_RE = re.compile(
+    r"[^a-z0-9áéíóöőúüű\s"
+    r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€„”“»«’°|~^`]")
 
 # # Finnish
-# NOTALLOW_FI = re.compile(
+# NOTALLOW_RE = re.compile(
 #     r"[^a-z0-9åäöšž\s"
 #     r"\.,;:!?\"'()\[\]{}\-–—…/\\%&@#+*=<>_$€”“»’°|~^`]")
 
@@ -92,7 +93,7 @@ def clean_text(text: str) -> str:
 
 
 #option for original fineweb (for english)
-# ---- stream dataset
+# # ---- stream dataset
 ds = load_dataset(
     "HuggingFaceFW/fineweb-2",
     name=LANG_CODE,
@@ -146,3 +147,5 @@ with open(OUT_PATH, "w", encoding="utf-8") as f:
 
 print(f"{docs:,} docs, {total_words:,} words")
 print("Saved to:", OUT_PATH)
+
+os._exit(0)

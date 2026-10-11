@@ -1,4 +1,4 @@
-"""python eval_morph_boundaries.py TOKENIZER_DIR SEGMENTED_FILE [--name RUN_NAME]
+"""
  SEGMENTED_FILE: the @@-segmented tokenizer training data (walk@@ed). 
  
 
