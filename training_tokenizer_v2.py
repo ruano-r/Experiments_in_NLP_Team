@@ -194,7 +194,7 @@ def build_vocab_from_merges(merges, chars, specials=('<unk>', '<pad>', '<bos>', 
         symbols.add(a)
         symbols.add(b)
         symbols.add(a + b)
-    index_to_string = list(specials) + punctuation + digits + sorted(symbols) # just a list, but the index of each item is their id
+    index_to_string = list(dict.fromkeys(list(specials) + punctuation + digits + sorted(symbols))) # just a list, but the index of each item is their id
     string_to_index = {tok: i for i, tok in enumerate(index_to_string)}
 
     return string_to_index, index_to_string

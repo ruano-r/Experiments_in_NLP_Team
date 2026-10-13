@@ -75,13 +75,16 @@ class TextDataset(Dataset):
         return chunk, chunk.clone()
 
 # Setting Model
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER, model_max_length=BLOCK_SIZE)
+tokenizer = PreTrainedTokenizerFast.from_pretrained(TOKENIZER, model_max_length=BLOCK_SIZE)
 
 print(tokenizer.mask_token, tokenizer.mask_token_id)
 print(tokenizer.pad_token, tokenizer.pad_token_id)
 print(len(tokenizer))
 
-config = GPT2Config(vocab_size=tokenizer.vocab_size,
+vocab = tokenizer.get_vocab()
+vocab_s= max(len(tokenizer), max(vocab.values()) + 1)
+
+config = GPT2Config(vocab_size=vocab_s,
                     n_embd=128,
                     n_layer=4,
                     n_head=4,
@@ -90,7 +93,12 @@ config = GPT2Config(vocab_size=tokenizer.vocab_size,
                     eos_token_id=tokenizer.eos_token_id)
 model = GPT2LMHeadModel(config).to(DEVICE)
 
-dataset = TextDataset(tokenizer, RAW_CORPUS, BLOCK_SIZE) #CHANGE TEXT
+dataset = TextDataset(tokenizer, RAW_CORPUS, BLOCK_SIZE)
+
+max_id = dataset.input_ids.max().item()
+print("max id in data:", max_id, "len(tokenizer):", len(tokenizer), "config.vocab_size:", config.vocab_size, flush=True)
+assert max_id < config.vocab_size, f"token id {max_id} >= vocab size {config.vocab_size}"
+
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
