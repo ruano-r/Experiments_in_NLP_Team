@@ -47,11 +47,6 @@ def evaluate_dataset(dataset, tokenizer, max_lines=None):
     if buf:
         process(buf)
 
-    # simple calculated metric 
-    vocab = tokenizer.get_vocab()   
-    id_to_tok = {i: t for t, i in vocab.items()}
-    covered_types = sum(1 for i in token_counts if id_to_tok.get(i) in vocab)
-    covered_occ = sum(c for i, c in token_counts.items() if id_to_tok.get(i) in vocab)
     return {
         "lines": n_docs,
         "words": n_words,
@@ -63,8 +58,7 @@ def evaluate_dataset(dataset, tokenizer, max_lines=None):
         "unk_word_rate": n_unk_words / n_words,
         "vocabulary_size": vocab_size,
         "observed_token_types": len(token_counts),
-        "vocabulary_type_coverage": covered_types / len(token_counts) if token_counts else 0.0,
-        "vocabulary_token_coverage": covered_occ / n_tokens,
+        "vocab_usage": len(token_counts) / vocab_size
     }
 
 
@@ -77,8 +71,7 @@ def print_results(r):
     print(f"<unk> word rate:  {r['unk_word_rate']*100:.4f}%")
     print(f"Vocabulary size: {r['vocabulary_size']:,}")
     print(f"Observed token types: {r['observed_token_types']:,}")
-    print(f"Vocabulary type coverage:  {r['vocabulary_type_coverage']*100:.4f}%")
-    print(f"Vocabulary token coverage: {r['vocabulary_token_coverage']*100:.4f}%")
+    print(f"Vocabulary usage  {r['vocab_usage']*100:.4f}%")
 
 
 
