@@ -22,12 +22,12 @@ CHUNK_CHARS = 1_000_000
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-#same word definition as preprocessing
-WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+#same word definition as preprocessing > >THIS WAS WRONG: it has to be the same definition as the tokenizer, so whitespace!
+#WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
 
 # ---- word/text stats
 def count_words(text):
-    return len(WORD_RE.findall(text))
+    return len(text.split) #fixed here
 
 
 def get_text_statistics(file_path):
@@ -100,7 +100,7 @@ class ImportedDataset(Dataset):
             encode(text[:cut])
 
         
-        if leftover.strip():
+        if leftover: #strip removed, it distorted some bits 
             encode(leftover)
 
         self.input_ids = torch.from_numpy(np.concatenate(pieces))
