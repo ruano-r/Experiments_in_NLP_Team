@@ -2,5 +2,5 @@
 - morphagram.py and morphagram_model.json is my morphological analyzer
 - SPA_morph_segment_word.py uses the morphological analyzer to segment tokenizer_1M.txt
 - tokenizer_1M_analyzed.txt, created using SPA_morph_segment_word.py, is a list of morphologically analysed Spanish words, no blank lines
-- dev_1M.txt and test_1M.txt were creating using fineweb2_splits2.py (main dir) (only some preprocessing was done) and are used to evaluate the models
+- dev_1M.txt and test_1M.txt were created using fineweb2_splits2.py (main dir) (only some preprocessing was done) and are used to evaluate the models
 - test_1M_CLEAN.txt is used to evaluate the tokenizer with evals_tokenizer.py
