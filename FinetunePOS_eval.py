@@ -22,7 +22,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, cla
 from transformers import AutoModelForTokenClassification, DataCollatorForTokenClassification, Trainer, TrainingArguments, set_seed
 
 if len(sys.argv) < 5:
-    sys.exit("Call like: python FinetunePOS_eval.py MODEL_FOLDER TOKENIZER_FOLDER LANGUAGE [opt. SEED]")
+    sys.exit("Call like: python FinetunePOS_eval.py MODEL_FOLDER TOKENIZER_FOLDER OUTPUT_FOLDER LANGUAGE [opt. SEED]")
 
 
 MODEL_CHECKPOINT = sys.argv[1]
@@ -64,7 +64,7 @@ print(f"Dataset loaded.")
 #print(f"Test size: {len(raw_datasets['test'])}")
 
 #get tokenizer
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_CHECKPOINT) #add_prefix_space=True)
+tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_CHECKPOINT) #add_prefix_space=True) if we use word initial marker
 
 assert tokenizer.is_fast, "word_ids() requires fast tokenizer" #should be safe, wrapper is fast
 assert tokenizer.pad_token is not None, "pad token missing" #should be safe, pad tokens should exist
@@ -81,17 +81,17 @@ def tokenize_and_align_labels(examples):
     labels = []
     for i, label_seq in enumerate(examples["upos"]):
         word_ids = tokenized_inputs.word_ids(batch_index=i)
-        previous_word_idx = None
         label_ids = []
 
-        for word_idx in word_ids:
+        for pos, word_idx in enumerate(word_ids):
+            next_idx = word_ids[pos + 1] if pos + 1 < len(word_ids) else None
+
             if word_idx is None:
                 label_ids.append(-100)      #special tokens ignored in loss
-            elif word_idx != previous_word_idx:
-                label_ids.append(label2id[label_seq[word_idx]])     #first subwords gets label
+            elif word_idx != next_idx:
+                label_ids.append(label2id[label_seq[word_idx]])     #last subword gets label
             else:
                 label_ids.append(-100)      #other subwords ignored in loss
-            previous_word_idx = word_idx
 
         labels.append(label_ids)
 
@@ -115,6 +115,7 @@ assert len(tokenizer) <= model.get_input_embeddings().num_embeddings, (
     f"Tokenizer has {len(tokenizer)} tokens but the model only has "
     f"{model.get_input_embeddings().num_embeddings} embeddings"
 )
+
 #mapping labels to all splits
 tokenized_datasets = raw_datasets.map(
     tokenize_and_align_labels,
