@@ -27,7 +27,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ---- word/text stats
 def count_words(text):
-    return len(text.split) #fixed here
+    return len(text.split()) #fixed here
 
 
 def get_text_statistics(file_path):
